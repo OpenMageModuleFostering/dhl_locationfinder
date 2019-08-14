@@ -28,14 +28,20 @@ $markerIcons = $this->getMarkerIcons();
 ?>
 <?php // Container with CTA Elements ?>
 <div id="dhl_locationfinder_trigger" class="control">
-    <input type="checkbox" name="shipping[useLocationFinder]" id="shipping:useLocationFinder" value=""
-           title="<?php echo $this->__('Shipping per Locationfinder'); ?>"
-           onclick="locationFinder.showLocationData(this.checked)" class="checkbox">
-    <label for="shipping:useLocationFinder"><?php echo $this->__('Shipping per Locationfinder'); ?></label>
+    <img
+        src="<?php echo $this->getSkinUrl('images/dhl_locationfinder/logo.png') ?>"
+        alt="<?php echo $this->__('DHL Additional Services') ?>"
+        title="<?php echo $this->__('DHL Additional Services') ?>"
+    />
 
-    <a href="javascript:void(0);" onclick="locationFinder.showLocationFinder(); locationFinder.initMap('map-canvas');"
+    <input type="checkbox" name="shipping[useLocationFinder]" id="shipping:useLocationFinder" value=""
+           title="<?php echo $this->__('Shipping to Parcelstation or Post Office'); ?>"
+           onclick="locationFinder.showLocationData(this.checked)" class="checkbox">
+    <label for="shipping:useLocationFinder"><?php echo $this->__('Shipping to Parcelstation or Post Office'); ?></label>
+
+    <a id = "locationfinder-button" href="javascript:void(0);" onclick="locationFinder.showLocationFinder(); locationFinder.initMap('map-canvas');"
        class="locationfinder-opener button">
-        <?php echo $this->__('Search packing station / post office'); ?>
+        <?php echo $this->__('Search for Parcelstation/ Post Office'); ?>
     </a>
 </div>
 
@@ -123,36 +129,36 @@ $markerIcons = $this->getMarkerIcons();
     <li class="no-display">
         <div class="input-box">
             <input type="hidden" name="shipping[dhl_station_type]" value=""
-                   title="<?php echo $this->__('DHL Station Type'); ?>"
+                   title="<?php echo $this->__('DHL pick-up location type'); ?>"
                    class="input-text readonly" id="shipping:dhl_station_type"
-                   placeholder="<?php echo $this->__('DHL Station Type'); ?>" readonly disabled/>
+                   placeholder="<?php echo $this->__('DHL pick-up location type'); ?>" readonly disabled/>
         </div>
     </li>
     <li class="fields">
         <div class="field">
             <label for="shipping:dhl_post_number">
-                <?php echo $this->__('DHL Post Number'); ?>
+                <?php echo $this->__('DHL Postnumber'); ?>
                 <i class="tooltip-inner"
-                   data-tooltip="<?php echo $this->__('The post number is your personal identification code for DHL. Once using a DHL service you should use your post number for identification. The post number is mandatory if you want to use the Packstation.');?>">
+                   data-tooltip="<?php echo $this->__('The Postnumber is your personal identification code that you receive with your registration at DHL.The postnumber is mandatory if you want to use a Packstation or a Post Office.');?>">
                     ?
                 </i>
             </label>
             <div class="input-box">
                 <input type="text" name="shipping[dhl_post_number]" value=""
-                       title="<?php echo $this->__('DHL Post Number'); ?>"
-                       class="input-text" id="shipping:dhl_post_number"
-                       placeholder="<?php echo $this->__('DHL Post Number'); ?>" disabled/>
+                       title="<?php echo $this->__('DHL Postnumber'); ?>"
+                       class="input-text validate-length minimum-length-6" id="shipping:dhl_post_number"
+                       placeholder="<?php echo $this->__('DHL Postnumber'); ?>" disabled/>
             </div>
         </div>
         <div class="field">
             <label for="shipping:dhl_station" class="required"><em>*</em>
-                <?php echo $this->__('DHL Station'); ?>
+                <?php echo $this->__('DHL pick-up location'); ?>
             </label>
             <div class="input-box">
                 <input type="text" name="shipping[dhl_station]" value=""
-                       title="<?php echo $this->__('DHL Station'); ?>"
+                       title="<?php echo $this->__('DHL pick-up location'); ?>"
                        class="input-text readonly" id="shipping:dhl_station"
-                       placeholder="<?php echo $this->__('DHL Station'); ?>" readonly disabled/>
+                       placeholder="<?php echo $this->__('DHL pick-up location'); ?>" readonly disabled/>
             </div>
         </div>
     </li>

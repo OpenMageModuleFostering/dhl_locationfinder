@@ -49,12 +49,11 @@ class Dhl_LocationFinder_Model_Observer
         $autoloader = Mage::helper('dhl_locationfinder/autoloader');
 
         $dhlLibs = array('LocationFinder', 'Psf');
-        array_walk(
-            $dhlLibs,
+        array_walk($dhlLibs,
             function($libDir) use ($autoloader) {
                 $autoloader->addNamespace(
-                    "Dhl\\$libDir\\", // prefix
-                    sprintf('%s/Dhl/%s/', Mage::getBaseDir('lib'), $libDir) // baseDir
+                    "Netresearch\Dhl\\$libDir\\", // prefix
+                    sprintf('%s/Netresearch/Dhl/%s/', Mage::getBaseDir('lib'), $libDir) // baseDir
                 );
             }
         );
@@ -107,50 +106,118 @@ class Dhl_LocationFinder_Model_Observer
         if (!empty($shippingData)) {
             /** @var Mage_Sales_Model_Quote $quote */
             $quote  = $observer->getData('quote');
-            $fields = array(
-                Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_POST_NUMBER,
-                Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_NUMBER,
-                Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE,
-            );
 
             $shippingAddress = $quote->getShippingAddress();
-            foreach ($fields as $field) {
-                $shippingAddress->setData($field, isset($shippingData[$field]) ? $shippingData[$field] : '');
+
+            $stationIdCode = Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_NUMBER;
+            if (isset($shippingData[$stationIdCode])) {
+                $stationId = preg_filter('/^.*([\d]{3})$/', '$1', $shippingData[$stationIdCode]);
+                $shippingAddress->setData($stationIdCode, $stationId);
+            } elseif ($shippingAddress->getData($stationIdCode)) {
+                $shippingAddress->setData($stationIdCode, null);
+            }
+
+            $postNumberCode = Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_POST_NUMBER;
+            if (isset($shippingData[$postNumberCode])) {
+                $shippingAddress->setData($postNumberCode, $shippingData[$postNumberCode]);
+            } elseif ($shippingAddress->getData($postNumberCode)) {
+                $shippingAddress->setData($postNumberCode, null);
+            }
+
+            $stationTypeCode = Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE;
+            if (isset($shippingData[$stationTypeCode])) {
+                $shippingAddress->setData($stationTypeCode, $shippingData[$stationTypeCode]);
+            } elseif ($shippingAddress->getData($stationTypeCode)) {
+                $shippingAddress->setData($stationTypeCode, null);
             }
         }
     }
 
     /**
-     * Append new DHL fields into postal facility for DHL Versenden
+     * Load the additional address fields for use by dispatcher.
+     * - event: dhl_versenden_fetch_postal_facility
      *
      * @param Varien_Event_Observer $observer
-     *
-     * @event dhl_versenden_set_postal_facility
-     *
-     * @return void
      */
-    public function saveDHLFieldsInPostalFacility(Varien_Event_Observer $observer)
+    public function loadPostalFacilityFields(Varien_Event_Observer $observer)
     {
         /** @var Varien_Object $facility */
         $facility = $observer->getData('postal_facility');
+        /** @var Mage_Sales_Model_Quote_Address | Mage_Sales_Model_Order_Address $address */
+        $address  = $observer->getData('customer_address');
 
-        /** @var Mage_Sales_Model_Quote_Address $address */
-        $address = $observer->getData('quote_address');
+        if ($facility->hasData()) {
+            // someone else already set a facility, we assume they know what they did.
+            return;
+        }
 
-        if ($address->getData(Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE)) {
-            $fieldMap = array(
-                'post_number' => Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_POST_NUMBER,
-                'shop_number' => Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_NUMBER,
-                'shop_type'   => Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE,
-            );
+        $shopType = $address->getData(Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE);
+        $shopNumber = $address->getData(Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_NUMBER);
+        $postNumber = $address->getData(Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_POST_NUMBER);
 
-            $facility->setData(
-                array(
-                    'shop_type'   => $address->getData($fieldMap['shop_type']),
-                    'shop_number' => preg_filter('/^.*([\d]{3})$/', '$1', $address->getData($fieldMap['shop_number'])),
-                    'post_number' => $address->getData($fieldMap['post_number']),
-                )
-            );
+        if ($shopType) {
+            $facility->setData('shop_type', $shopType);
+            $facility->setData('shop_number', preg_filter('/^.*([\d]{3})$/', '$1', $shopNumber));
+            $facility->setData('post_number', $postNumber);
+        }
+    }
+
+    /**
+     * Save postal facility data as announced by dispatcher.
+     * - event: dhl_versenden_announce_postal_facility
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function updatePostalFacilityFields(Varien_Event_Observer $observer)
+    {
+        /** @var Varien_Object $facility */
+        $facility = $observer->getData('postal_facility');
+        /** @var Mage_Sales_Model_Quote_Address|Mage_Sales_Model_Order_Address $address */
+        $address = $observer->getData('customer_address');
+
+        $address->setData(
+            Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_TYPE,
+            $facility->getData('shop_type')
+        );
+        $address->setData(
+            Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_STATION_NUMBER,
+            $facility->getData('shop_number')
+        );
+        $address->setData(
+            Dhl_LocationFinder_Model_Resource_Setup::ATTRIBUTE_CODE_POST_NUMBER,
+            $facility->getData('post_number')
+        );
+
+        $address->save();
+    }
+
+    /**
+     * Translate the station type string
+     * - event: customer_address_format
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function translateStationtype(Varien_Event_Observer $observer)
+    {
+        $address = $observer->getData('address');
+        $stationType = Mage::helper('dhl_locationfinder/data')->__($address->getData('dhl_station_type'));
+        $address->setData('dhl_station_type', $stationType);
+    }
+
+
+    /**
+     * Add the Postnumber Label
+     * - event: customer_address_format
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function addPostNumberLabel(Varien_Event_Observer $observer)
+    {
+        $address = $observer->getData('address');
+        if ($address->getData('dhl_post_number')) {
+            $postNumberLabel = Mage::helper('dhl_locationfinder/data')->__('Postnumber: ');
+            $postNumberString = $postNumberLabel . $address->getData('dhl_post_number');
+            $address->setData('dhl_post_number', $postNumberString);
         }
     }
 }

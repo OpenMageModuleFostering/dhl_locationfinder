@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+<?php
 /**
  * Dhl LocationFinder
  *
@@ -19,23 +18,26 @@
  *
  * @category  Dhl
  * @package   Dhl_LocationFinder
- * @author    Christoph Aßmann <christoph.assmann@netresearch.de>
  * @author    Benjamin Heuer <benjamin.heuer@netresearch.de>
  * @copyright 2016 Netresearch GmbH & Co. KG
  * @license   http://opensource.org/licenses/osl-3.0.php Open Software License (OSL 3.0)
  * @link      http://www.netresearch.de/
  */
--->
-<config>
-    <api2>
-        <resources>
-            <order_address>
-                <attributes translate="dhl_station dhl_station_type dhl_post_number" module="dhl_locationfinder">
-                    <dhl_station>DHL pick-up location</dhl_station>
-                    <dhl_station_type>DHL pick-up location type</dhl_station_type>
-                    <dhl_post_number>DHL Postnumber</dhl_post_number>
-                </attributes>
-            </order_address>
-        </resources>
-    </api2>
-</config>
+namespace Netresearch\Dhl\LocationFinder\ParcelLocation;
+/**
+ * Formatter
+ *
+ * @category Dhl
+ * @package  Dhl_LocationFinder
+ * @author   Benjamin Heuer <benjamin.heuer@netresearch.de>
+ * @license  http://opensource.org/licenses/osl-3.0.php Open Software License (OSL 3.0)
+ * @link     http://www.netresearch.de/
+ */
+interface Formatter
+{
+    /**
+     * @param Item[] $items
+     * @return \stdClass[]
+     */
+    public function format(array $items);
+}
