@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Dhl_LocationFinder>
+            <active>true</active>
+            <codePool>community</codePool>
+        </Dhl_LocationFinder>
+    </modules>
+</config>

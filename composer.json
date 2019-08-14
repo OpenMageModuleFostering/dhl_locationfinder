@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Dhl_LocationFinder",
+    "type": "magento-module",
+    "license": "OSL3",
+    "homepage": "",
+    "description": "DHL Parcel Shop Finder",
+    "authors": [
+    {
+        "name": "Christoph A\u00dfmann",
+        "email": "christoph.assmann@netresearch.de"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}
